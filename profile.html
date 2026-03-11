@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Your Profile</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+    .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 800px; margin: 0 auto; }
+    h1 { color: #333; margin-bottom: 10px; text-align: center; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+    .section { margin-bottom: 30px; }
+    h2 { color: #667eea; margin-bottom: 15px; font-size: 20px; }
+    .hobbies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+    .hobby-card { border: 3px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
+    .hobby-card:hover { border-color: #667eea; transform: translateY(-2px); }
+    .hobby-card.selected { border-color: #10b981; background: #f0fdf4; }
+    .hobby-icon { font-size: 48px; margin-bottom: 10px; }
+    .hobby-name { font-weight: bold; color: #333; }
+    .characters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .character-item { border: 2px solid #ddd; border-radius: 5px; padding: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
+    .character-item:hover { border-color: #667eea; }
+    .character-item.selected { border-color: #10b981; background: #f0fdf4; }
+    .character-icon { font-size: 24px; }
+    .character-name { font-weight: bold; color: #333; }
+    button { width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    button:hover { background: #059669; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .info { background: #f0f9ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 5px; margin-bottom: 20px; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Create Your Profile</h1>
+    <p class="subtitle">Choose your hobby and character traits</p>
+    
+    <div class="info">
+      <strong>Note:</strong> Your selections will determine what activities and opportunities appear during the game!
+    </div>
+
+    <div class="section">
+      <h2>Select Your Main Hobby (Choose 1)</h2>
+      <div class="hobbies-grid" id="hobbiesGrid"></div>
+    </div>
+
+    <div class="section">
+      <h2>Select Your Character Traits (Choose up to 3)</h2>
+      <div class="characters-grid" id="charactersGrid"></div>
+    </div>
+
+    <button onclick="startGame()" id="startBtn" disabled>Start Game</button>
+  </div>
+
+  <script>
+    const hobbies = [
+      { id: 'swimming', name: 'Swimming', icon: '🏊' },
+      { id: 'gaming', name: 'Gaming', icon: '🎮' },
+      { id: 'reading', name: 'Reading', icon: '📚' },
+      { id: 'music', name: 'Music', icon: '🎵' },
+      { id: 'sports', name: 'Sports', icon: '⚽' },
+      { id: 'art', name: 'Art', icon: '🎨' },
+      { id: 'cooking', name: 'Cooking', icon: '🍳' },
+      { id: 'photography', name: 'Photography', icon: '📷' },
+      { id: 'dance', name: 'Dance', icon: '💃' },
+      { id: 'tech', name: 'Technology', icon: '💻' }
+    ];
+
+    const characters = [
+      { id: 'hardworking', name: 'Hardworking', icon: '💪' },
+      { id: 'organized', name: 'Organized', icon: '📋' },
+      { id: 'creative', name: 'Creative', icon: '🎨' },
+      { id: 'social', name: 'Social', icon: '👥' },
+      { id: 'competitive', name: 'Competitive', icon: '🏆' },
+      { id: 'generous', name: 'Generous', icon: '💝' },
+      { id: 'tech', name: 'Tech-Savvy', icon: '💻' },
+      { id: 'adventurous', name: 'Adventurous', icon: '🌟' }
+    ];
+
+    let selectedHobby = null;
+    let selectedCharacters = [];
+
+    function renderHobbies() {
+      const grid = document.getElementById('hobbiesGrid');
+      grid.innerHTML = hobbies.map(hobby => `
+        <div class="hobby-card ${selectedHobby === hobby.id ? 'selected' : ''}" onclick="selectHobby('${hobby.id}')">
+          <div class="hobby-icon">${hobby.icon}</div>
+          <div class="hobby-name">${hobby.name}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderCharacters() {
+      const grid = document.getElementById('charactersGrid');
+      grid.innerHTML = characters.map(char => `
+        <div class="character-item ${selectedCharacters.includes(char.id) ? 'selected' : ''}" onclick="selectCharacter('${char.id}')">
+          <div class="character-icon">${char.icon}</div>
+          <div class="character-name">${char.name}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectHobby(hobbyId) {
+      selectedHobby = hobbyId;
+      renderHobbies();
+      updateButton();
+    }
+
+    function selectCharacter(charId) {
+      const index = selectedCharacters.indexOf(charId);
+      if (index >= 0) {
+        selectedCharacters.splice(index, 1);
+      } else {
+        if (selectedCharacters.length >= 3) {
+          alert('You can only select up to 3 character traits!');
+          return;
+        }
+        selectedCharacters.push(charId);
+      }
+      renderCharacters();
+      updateButton();
+    }
+
+    function updateButton() {
+      const btn = document.getElementById('startBtn');
+      btn.disabled = !selectedHobby || selectedCharacters.length === 0;
+    }
+
+    async function startGame() {
+      if (!selectedHobby || selectedCharacters.length === 0) {
+        alert('Please select a hobby and at least one character trait');
+        return;
+      }
+
+      const profile = {
+        hobby: selectedHobby,
+        characters: selectedCharacters
+      };
+
+      localStorage.setItem('studentProfile', JSON.stringify(profile));
+      
+      const student = JSON.parse(localStorage.getItem('currentStudent'));
+      const response = await fetch('http://localhost:3000/api/save-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          school: student.school,
+          adminNumber: student.adminNumber,
+          profile
+        })
+      });
+
+      window.location.href = 'game.html';
+    }
+
+    renderHobbies();
+    renderCharacters();
+  </script>
+</body>
+</html>
