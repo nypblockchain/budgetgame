@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(code --diff \"c:\\\\Users\\\\LIUJR\\\\Documents\\\\Financial Literacy App\\\\server.js.original\" \"c:\\\\Users\\\\LIUJR\\\\Documents\\\\Financial Literacy App\\\\server.js\")"
+    ]
+  }
+}
