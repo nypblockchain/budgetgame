@@ -140,7 +140,7 @@
       localStorage.setItem('studentProfile', JSON.stringify(profile));
       
       const student = JSON.parse(localStorage.getItem('currentStudent'));
-      const response = await fetch('http://localhost:3000/api/save-profile', {
+      const response = await fetch('/api/save-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

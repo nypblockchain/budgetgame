@@ -58,7 +58,7 @@
         return;
       }
 
-      const response = await fetch('http://localhost:3000/api/start-game', {
+      const response = await fetch('/api/start-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ school, adminNumber })

@@ -22,11 +22,33 @@ const DATA_FILE = path.join(__dirname, 'data', 'gameData.json');
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD environment variable is required');
-const adminTokens = new Set();
+const adminTokens = new Map();
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+const ALLOWED_SCHOOLS = ['Maris Stella High School'];
 
 function validateStudentInput(school, adminNumber) {
   if (!school || !adminNumber) {
     const err = new Error('school and adminNumber are required');
+    err.status = 400;
+    throw err;
+  }
+  if (!ALLOWED_SCHOOLS.includes(school)) {
+    const err = new Error('Invalid school');
+    err.status = 400;
+    throw err;
+  }
+  const num = parseInt(adminNumber);
+  if (isNaN(num) || num < 1 || num > 24) {
+    const err = new Error('adminNumber must be between 1 and 24');
+    err.status = 400;
+    throw err;
+  }
+}
+
+function validateBalance(balance) {
+  if (balance === undefined || balance === null || isNaN(balance) || !isFinite(balance)) {
+    const err = new Error('Invalid balance value');
     err.status = 400;
     throw err;
   }
@@ -62,7 +84,7 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   }
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
     const token = crypto.randomBytes(32).toString('hex');
-    adminTokens.add(token);
+    adminTokens.set(token, { expiresAt: Date.now() + TOKEN_TTL_MS });
     res.json({ success: true, token });
   } else {
     res.status(401).json({ success: false, error: 'Invalid credentials' });
@@ -71,9 +93,11 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
 
 function verifyAdmin(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token && adminTokens.has(token)) {
+  const entry = token && adminTokens.get(token);
+  if (entry && Date.now() < entry.expiresAt) {
     next();
   } else {
+    if (entry) adminTokens.delete(token);
     res.status(401).json({ error: 'Unauthorized' });
   }
 }
@@ -183,11 +207,12 @@ app.post('/api/admin/reset-student', verifyAdmin, async (req, res, next) => {
   try {
     const { school, adminNumber, startingBalance } = req.body;
     validateStudentInput(school, adminNumber);
+    const balance = startingBalance !== undefined ? Number(startingBalance) : 0;
+    validateBalance(balance);
     const data = await readData();
     const studentId = `${school}_${adminNumber}`;
 
     if (data.students[studentId]) {
-      const balance = startingBalance !== undefined ? startingBalance : 0;
       const existingProfile = data.students[studentId].profile;
       data.students[studentId] = {
         school,
@@ -212,8 +237,9 @@ app.post('/api/admin/reset-student', verifyAdmin, async (req, res, next) => {
 app.post('/api/admin/reset-all', verifyAdmin, async (req, res, next) => {
   try {
     const { startingBalance } = req.body;
+    const balance = startingBalance !== undefined ? Number(startingBalance) : 0;
+    validateBalance(balance);
     const data = await readData();
-    const balance = startingBalance !== undefined ? startingBalance : 0;
 
     Object.keys(data.students).forEach(studentId => {
       const student = data.students[studentId];
@@ -243,12 +269,13 @@ app.post('/api/admin/set-balance', verifyAdmin, async (req, res, next) => {
     if (startingBalance === undefined) {
       return res.status(400).json({ error: 'startingBalance is required' });
     }
+    validateBalance(Number(startingBalance));
     const data = await readData();
     const studentId = `${school}_${adminNumber}`;
 
     if (data.students[studentId]) {
-      data.students[studentId].startingBalance = startingBalance;
-      data.students[studentId].currentBalance = startingBalance;
+      data.students[studentId].startingBalance = Number(startingBalance);
+      data.students[studentId].currentBalance = Number(startingBalance);
       await writeData(data);
       res.json({ success: true, message: 'Starting balance updated' });
     } else {
@@ -265,11 +292,13 @@ app.post('/api/admin/set-all-balance', verifyAdmin, async (req, res, next) => {
     if (startingBalance === undefined) {
       return res.status(400).json({ error: 'startingBalance is required' });
     }
+    validateBalance(Number(startingBalance));
     const data = await readData();
+    const balance = Number(startingBalance);
 
     Object.keys(data.students).forEach(studentId => {
-      data.students[studentId].startingBalance = startingBalance;
-      data.students[studentId].currentBalance = startingBalance;
+      data.students[studentId].startingBalance = balance;
+      data.students[studentId].currentBalance = balance;
     });
 
     await writeData(data);

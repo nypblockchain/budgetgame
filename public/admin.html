@@ -152,8 +152,8 @@
       const token = checkAuth();
       
       try {
-        const response = await fetch('http://localhost:3000/api/admin/all-students', {
-          headers: { 'Authorization': token }
+        const response = await fetch('/api/admin/all-students', {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (response.status === 401) {
@@ -259,10 +259,10 @@
       const token = checkAuth();
       const student = allStudents[studentId];
       
-      const response = await fetch('http://localhost:3000/api/admin/reset-student', {
+      const response = await fetch('/api/admin/reset-student', {
         method: 'POST',
         headers: { 
-          'Authorization': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -284,10 +284,10 @@
 
       const token = checkAuth();
       
-      const response = await fetch('http://localhost:3000/api/admin/reset-all', {
+      const response = await fetch('/api/admin/reset-all', {
         method: 'POST',
         headers: { 
-          'Authorization': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ startingBalance: balance })
@@ -310,10 +310,10 @@
       const token = checkAuth();
       const student = allStudents[studentId];
       
-      const response = await fetch('http://localhost:3000/api/admin/set-balance', {
+      const response = await fetch('/api/admin/set-balance', {
         method: 'POST',
         headers: { 
-          'Authorization': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -335,10 +335,10 @@
 
       const token = checkAuth();
       
-      const response = await fetch('http://localhost:3000/api/admin/set-all-balance', {
+      const response = await fetch('/api/admin/set-all-balance', {
         method: 'POST',
         headers: { 
-          'Authorization': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ startingBalance: balance })

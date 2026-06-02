@@ -167,46 +167,55 @@
     const MAX_TIREDNESS = 100;
     let dailyHours = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
 
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     async function loadStudent() {
-      const student = JSON.parse(localStorage.getItem('currentStudent'));
-      const profile = JSON.parse(localStorage.getItem('studentProfile'));
-      
-      if (!student) {
-        window.location.href = 'index.html';
-        return;
-      }
+      try {
+        const student = JSON.parse(localStorage.getItem('currentStudent'));
+        const profile = JSON.parse(localStorage.getItem('studentProfile'));
+        
+        if (!student) {
+          window.location.href = 'index.html';
+          return;
+        }
 
-      const response = await fetch(`http://localhost:3000/api/student/${student.school}/${student.adminNumber}`);
-      studentData = await response.json();
-      
-      if (!studentData) {
-        window.location.href = 'index.html';
-        return;
-      }
+        const response = await fetch(`/api/student/${encodeURIComponent(student.school)}/${encodeURIComponent(student.adminNumber)}`);
+        studentData = await response.json();
+        
+        if (!studentData) {
+          window.location.href = 'index.html';
+          return;
+        }
 
-      if (!studentData.profile && !profile) {
-        window.location.href = 'profile.html';
-        return;
-      }
+        if (!studentData.profile && !profile) {
+          window.location.href = 'profile.html';
+          return;
+        }
 
-      studentProfile = studentData.profile || profile;
-      if (!localStorage.getItem('studentProfile')) {
-        localStorage.setItem('studentProfile', JSON.stringify(studentProfile));
-      }
-      
-      currentBalance = studentData.currentBalance;
-      currentWeek = studentData.currentWeek;
-      document.getElementById('studentInfo').textContent = `${student.school} - Admin #${student.adminNumber}`;
-      document.getElementById('currentWeek').textContent = currentWeek;
-      updateBalance();
-      
-      if (currentWeek > 12) {
-        showGameComplete();
-      } else if (currentBalance < 0) {
-        showGameOver('Your balance dropped below $0');
-      } else {
-        loadOptions();
-        loadHistory();
+        studentProfile = studentData.profile || profile;
+        if (!localStorage.getItem('studentProfile')) {
+          localStorage.setItem('studentProfile', JSON.stringify(studentProfile));
+        }
+        
+        currentBalance = studentData.currentBalance;
+        currentWeek = studentData.currentWeek;
+        document.getElementById('studentInfo').textContent = `${student.school} - Admin #${student.adminNumber}`;
+        document.getElementById('currentWeek').textContent = currentWeek;
+        updateBalance();
+        
+        if (currentWeek > 12) {
+          showGameComplete();
+        } else if (currentBalance < 0) {
+          showGameOver('Your balance dropped below $0');
+        } else {
+          loadOptions();
+          loadHistory();
+        }
+      } catch (err) {
+        console.error('Failed to load student:', err);
+        alert('Failed to connect to server. Please refresh and try again.');
       }
     }
 
@@ -230,8 +239,8 @@
             <div class="history-transactions">
               ${week.transactions.map(t => `
                 <div class="history-transaction">
-                  <span>${t.icon} ${t.name} ${t.hours > 0 ? `(⏰ ${t.hours}h)` : ''}</span>
-                  <strong style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}">${t.type === 'income' ? '+' : '-'}$${t.amount}</strong>
+                  <span>${escapeHtml(t.icon)} ${escapeHtml(t.name)} ${t.hours > 0 ? `(⏰ ${t.hours}h)` : ''}</span>
+                  <strong style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}">${t.type === 'income' ? '+' : '-'}$${Number(t.amount).toFixed(2)}</strong>
                 </div>
               `).join('')}
             </div>
@@ -243,8 +252,7 @@
     }
 
     function loadOptions() {
-      availableOptions.income = [];
-      availableOptions.expenses = [];
+      availableOptions = { income: [], expenses: [] };
 
       const usedOneTime = studentData.usedOneTimeOptions || [];
       const hobby = studentProfile.hobby;
@@ -587,38 +595,47 @@
       }
 
       const student = JSON.parse(localStorage.getItem('currentStudent'));
-      
-      const response = await fetch('http://localhost:3000/api/submit-week', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          school: student.school,
-          adminNumber: student.adminNumber,
-          week: currentWeek,
-          transactions: selections,
-          balance: currentBalance
-        })
-      });
 
-      const result = await response.json();
-      studentData = result.data;
-      
-      if (currentBalance < 0) {
-        showGameOver('Your balance dropped below $0');
-      } else if (currentWeek >= 12) {
-        showGameComplete();
-      } else {
-        selections = [];
-        totalHours = 0;
-        totalTiredness = 0;
-        dailyHours = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
-        currentWeek++;
-        document.getElementById('currentWeek').textContent = currentWeek;
-        loadOptions();
-        loadHistory();
-        renderSelections();
-        updateTrackers();
-        alert(`Week ${currentWeek - 1} submitted! Starting Week ${currentWeek}`);
+      try {
+        const response = await fetch('/api/submit-week', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school: student.school,
+            adminNumber: student.adminNumber,
+            week: currentWeek,
+            transactions: selections,
+            balance: currentBalance
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          alert(result.error || 'Failed to submit week');
+          return;
+        }
+        studentData = result.data;
+        
+        if (currentBalance < 0) {
+          showGameOver('Your balance dropped below $0');
+        } else if (currentWeek >= 12) {
+          showGameComplete();
+        } else {
+          selections = [];
+          totalHours = 0;
+          totalTiredness = 0;
+          dailyHours = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+          currentWeek++;
+          document.getElementById('currentWeek').textContent = currentWeek;
+          loadOptions();
+          loadHistory();
+          renderSelections();
+          updateTrackers();
+          alert(`Week ${currentWeek - 1} submitted! Starting Week ${currentWeek}`);
+        }
+      } catch (err) {
+        console.error('Failed to submit week:', err);
+        alert('Failed to connect to server. Please try again.');
       }
     }
 
