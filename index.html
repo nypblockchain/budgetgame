@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Literacy App - Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 400px; width: 90%; }
+    h1 { color: #333; margin-bottom: 30px; text-align: center; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; }
+    select, input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
+    select:focus, input:focus { outline: none; border-color: #667eea; }
+    button { width: 100%; padding: 14px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #5568d3; }
+    .admin-link { text-align: center; margin-top: 20px; }
+    .admin-link a { color: #667eea; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>The Budget Game</h1>
+    <div class="form-group">
+      <label>School</label>
+      <select id="school">
+        <option value="Pei Hwa Secondary School">Pei Hwa Secondary School</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Admin Number</label>
+      <select id="adminNumber">
+        <option value="">Select Admin Number</option>
+      </select>
+    </div>
+    <button onclick="startGame()">Start Game</button>
+    <div class="admin-link">
+      <a href="adminLogin.html">Admin Login</a>
+    </div>
+  </div>
+
+  <script>
+    const adminSelect = document.getElementById('adminNumber');
+    for (let i = 1; i <= 24; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = i;
+      adminSelect.appendChild(option);
+    }
+
+    async function startGame() {
+      const school = document.getElementById('school').value;
+      const adminNumber = document.getElementById('adminNumber').value;
+      
+      if (!adminNumber) {
+        alert('Please select an admin number');
+        return;
+      }
+
+      const response = await fetch('http://localhost:3000/api/start-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ school, adminNumber })
+      });
+
+      const data = await response.json();
+      localStorage.setItem('currentStudent', JSON.stringify({ school, adminNumber }));
+      window.location.href = 'profile.html';
+    }
+  </script>
+</body>
+</html>
